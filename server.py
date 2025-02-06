@@ -46,7 +46,6 @@ async def play(request: Request):
     if server_state.skip_frames > 0 and server_state.skip_frame_count >= server_state.skip_frames:
         server_state.skip_frame_count = 0
         return []
-    server_state.should_reset = False
     server_state.data = level_data  # Update the data with level_data
     server_state.data_event.set()  # Signal that data has been updated
     moves = server_state.moves
@@ -55,11 +54,13 @@ async def play(request: Request):
 
 @app.get("/reset")
 def reset():
-    return {
+    response = {
         "reset": server_state.should_reset,
         "seed": server_state.reset_seed,
         "options": server_state.reset_options,
         }
+    server_state.should_reset = False
+    return response
 
 async def get_data():
     # Wait for the data to be updated by the play method
