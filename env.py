@@ -15,6 +15,7 @@ gym.envs.registration.register(
 )
 
 class ActionSpace(Enum):
+    # Basic movements
     MOVE_RIGHT = 0
     MOVE_LEFT = 1
     MOVE_UP = 2
@@ -23,16 +24,27 @@ class ActionSpace(Enum):
     MOVE_UP_LEFT = 5
     MOVE_DOWN_RIGHT = 6
     MOVE_DOWN_LEFT = 7
-    ATTACK = 8
-    DASH = 9
-    SPECIAL = 10
-    SHIELD = 11
-    USE_RING = 12
-    USE_SPEED_ZAPPER = 13
-    USE_BIG_POTION = 14
-    REDEEM_SKILL_POINTS_ATTACK = 15
-    REDEEM_SKILL_POINTS_HEALTH = 16
-    REDEEM_SKILL_POINTS_SPEED = 17
+    
+    # Dash movements
+    DASH_RIGHT = 8
+    DASH_LEFT = 9
+    DASH_UP = 10
+    DASH_DOWN = 11
+    DASH_UP_RIGHT = 12
+    DASH_UP_LEFT = 13
+    DASH_DOWN_RIGHT = 14
+    DASH_DOWN_LEFT = 15
+    
+    # Actions
+    ATTACK = 16
+    SPECIAL = 17
+    SHIELD = 18
+    USE_RING = 19
+    USE_SPEED_ZAPPER = 20
+    USE_BIG_POTION = 21
+    REDEEM_SKILL_POINTS_ATTACK = 22
+    REDEEM_SKILL_POINTS_HEALTH = 23
+    REDEEM_SKILL_POINTS_SPEED = 24
 
 
 class CustomEnv(gym.Env):
@@ -121,24 +133,31 @@ class CustomEnv(gym.Env):
         # Convert action enum to game action
         move_delta = 500
         action_map = {
-            ActionSpace.MOVE_RIGHT: {"move_to": self.get_move_coordinates(Position(move_delta, 0))},
-            ActionSpace.MOVE_LEFT: {"move_to": self.get_move_coordinates(Position(-move_delta, 0))},
-            ActionSpace.MOVE_UP: {"move_to": self.get_move_coordinates(Position(0, -move_delta))},
-            ActionSpace.MOVE_DOWN: {"move_to": self.get_move_coordinates(Position(0, move_delta))},
-            ActionSpace.MOVE_UP_RIGHT: {"move_to": self.get_move_coordinates(Position(move_delta, -move_delta))},
-            ActionSpace.MOVE_UP_LEFT: {"move_to": self.get_move_coordinates(Position(-move_delta, -move_delta))},
-            ActionSpace.MOVE_DOWN_RIGHT: {"move_to": self.get_move_coordinates(Position(move_delta, move_delta))},
-            ActionSpace.MOVE_DOWN_LEFT: {"move_to": self.get_move_coordinates(Position(-move_delta, move_delta))},
-            ActionSpace.ATTACK: "attack",
-            ActionSpace.DASH: "dash",
-            ActionSpace.SPECIAL: "special",
-            ActionSpace.SHIELD: "shield",
-            ActionSpace.USE_RING: {"use": "ring"},
-            ActionSpace.USE_SPEED_ZAPPER: {"use": "speed_zapper"},
-            ActionSpace.USE_BIG_POTION: {"use": "big_potion"},
-            ActionSpace.REDEEM_SKILL_POINTS_ATTACK: {"redeem_skill_point": "attack"},
-            ActionSpace.REDEEM_SKILL_POINTS_HEALTH: {"redeem_skill_point": "health"},
-            ActionSpace.REDEEM_SKILL_POINTS_SPEED: {"redeem_skill_point": "speed"},
+            ActionSpace.MOVE_RIGHT: [{"move_to": self.get_move_coordinates(Position(move_delta, 0))}],
+            ActionSpace.MOVE_LEFT: [{"move_to": self.get_move_coordinates(Position(-move_delta, 0))}],
+            ActionSpace.MOVE_UP: [{"move_to": self.get_move_coordinates(Position(0, -move_delta))}],
+            ActionSpace.MOVE_DOWN: [{"move_to": self.get_move_coordinates(Position(0, move_delta))}],
+            ActionSpace.MOVE_UP_RIGHT: [{"move_to": self.get_move_coordinates(Position(move_delta, -move_delta))}],
+            ActionSpace.MOVE_UP_LEFT: [{"move_to": self.get_move_coordinates(Position(-move_delta, -move_delta))}],
+            ActionSpace.MOVE_DOWN_RIGHT: [{"move_to": self.get_move_coordinates(Position(move_delta, move_delta))}],
+            ActionSpace.MOVE_DOWN_LEFT: [{"move_to": self.get_move_coordinates(Position(-move_delta, move_delta))}],
+            ActionSpace.DASH_RIGHT: ["dash", {"move_to": self.get_move_coordinates(Position(move_delta, 0))}],
+            ActionSpace.DASH_LEFT: ["dash", {"move_to": self.get_move_coordinates(Position(-move_delta, 0))}],
+            ActionSpace.DASH_UP: ["dash", {"move_to": self.get_move_coordinates(Position(0, -move_delta))}],
+            ActionSpace.DASH_DOWN: ["dash", {"move_to": self.get_move_coordinates(Position(0, move_delta))}],
+            ActionSpace.DASH_UP_RIGHT: ["dash", {"move_to": self.get_move_coordinates(Position(move_delta, -move_delta))}],
+            ActionSpace.DASH_UP_LEFT: ["dash", {"move_to": self.get_move_coordinates(Position(-move_delta, -move_delta))}],
+            ActionSpace.DASH_DOWN_RIGHT: ["dash", {"move_to": self.get_move_coordinates(Position(move_delta, move_delta))}],
+            ActionSpace.DASH_DOWN_LEFT: ["dash", {"move_to": self.get_move_coordinates(Position(-move_delta, move_delta))}],
+            ActionSpace.ATTACK: ["attack"],
+            ActionSpace.SPECIAL: ["special"],
+            ActionSpace.SHIELD: ["shield"],
+            ActionSpace.USE_RING: [{"use": "ring"}],
+            ActionSpace.USE_SPEED_ZAPPER: [{"use": "speed_zapper"}],
+            ActionSpace.USE_BIG_POTION: [{"use": "big_potion"}],
+            ActionSpace.REDEEM_SKILL_POINTS_ATTACK: [{"redeem_skill_point": "attack"}],
+            ActionSpace.REDEEM_SKILL_POINTS_HEALTH: [{"redeem_skill_point": "health"}],
+            ActionSpace.REDEEM_SKILL_POINTS_SPEED: [{"redeem_skill_point": "speed"}],
         }
         return action_map[action]
 
@@ -146,7 +165,7 @@ class CustomEnv(gym.Env):
         # convert the action index to a move
         game_action = self.get_game_move(ActionSpace(action_idx))
         # pass the action to the server and get the new state
-        set_moves([game_action])
+        set_moves(game_action)
 
         # Use existing loop instead of creating new one
         new_level_data = self.loop.run_until_complete(get_data())
