@@ -158,7 +158,7 @@ def string_to_int(s):
     encoded = base64.b64encode(s.encode()).hex()
     return int(encoded, 16)
 
-item_feature_count=5
+item_feature_count=6
 def serialize_item(item: Item):
     """Convert item data to a flattened NumPy array."""
     item_type_mapping = {
@@ -169,6 +169,11 @@ def serialize_item(item: Item):
         "coin": 4,
         "power_up": 5,
     }
+    power_mapping = {
+        "bomb": 0,
+        "shockwave": 0,
+        "freeze": 0,
+    }
     return [
         # item.id,
         item.position.x,
@@ -176,6 +181,7 @@ def serialize_item(item: Item):
         item_type_mapping.get(item.type, -1),
         item.points,
         item.value,
+        power_mapping.get(item.power, -1),
     ]
 
 obstacle_feature_count=2

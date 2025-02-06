@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     # episode_over = False
     # while not episode_over:
-    #     action = random.randint(0, 4)  # Generate a random action from 0 to 4
+    #     action = random.randint(0, 7)  # Generate a random action from 0 to 4
     #     observation, reward, terminated, truncated, info = env.step(action)
 
     #     episode_over = terminated or truncated

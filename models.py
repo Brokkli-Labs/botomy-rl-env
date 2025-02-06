@@ -1,5 +1,5 @@
 from dataclasses import dataclass, asdict, is_dataclass
-from typing import List, Literal, TypeAlias, Union, Any, Dict
+from typing import List, Literal, TypeAlias, Union, Any, Dict, Optional
 import json
 from enum import Enum
 
@@ -52,6 +52,7 @@ class GameObject:
 class Item(GameObject):
     value: int
     points: int
+    power: Optional[PowerUpType] 
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Item':
@@ -60,7 +61,8 @@ class Item(GameObject):
             position=Position.from_dict(data['position']),
             type=data['type'],
             value=data.get('value', 0),  # Use get to handle missing keys
-            points=data.get('points', 0)  # Use get to handle missing keys
+            points=data.get('points', 0),  # Use get to handle missing keys
+            power=data.get('power', None)
         )
 
 @dataclass
