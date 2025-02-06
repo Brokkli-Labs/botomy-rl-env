@@ -69,7 +69,8 @@ class Item(GameObject):
 class Character(GameObject):
     attack_damage: int
     direction: Direction
-    health: int
+    health: float
+    max_health: float
     is_attacking: bool
     is_frozen: bool
     is_pushed: bool
@@ -94,7 +95,6 @@ class Character(GameObject):
 
 @dataclass
 class Enemy(Character):
-    max_health: int
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Enemy':
@@ -180,6 +180,7 @@ class Player(Character):
             attack_damage=data['attack_damage'],
             direction=data['direction'],
             health=data['health'],
+            max_health=data['max_health'],
             is_attacking=data['is_attacking'],
             is_frozen=data['is_frozen'],
             is_pushed=data['is_pushed'],
@@ -208,7 +209,6 @@ class OwnPlayer(Player):
     is_shield_ready: bool
     is_special_ready: bool
     is_zap_ready: bool
-    max_health: int
     overclock_duration: int
 
     @classmethod
@@ -220,6 +220,7 @@ class OwnPlayer(Player):
             attack_damage=data['attack_damage'],
             direction=data['direction'],
             health=data['health'],
+            max_health=data['max_health'],
             is_attacking=data['is_attacking'],
             is_frozen=data['is_frozen'],
             is_pushed=data['is_pushed'],
@@ -244,7 +245,6 @@ class OwnPlayer(Player):
             is_shield_ready=data['is_shield_ready'],
             is_special_ready=data['is_special_ready'],
             is_zap_ready=data['is_zap_ready'],
-            max_health=data['max_health'],
             overclock_duration=data['overclock_duration']
         )
 
@@ -297,7 +297,7 @@ class PlayerStat:
     kd_ratio: float
     kill_streak: int
     overclocks: int
-    xps: int
+    xps: float
     wolf_kills: int
     ghoul_kills: int
     tiny_kills: int

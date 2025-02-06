@@ -1,7 +1,16 @@
 import base64
 from models import Player, OwnPlayer, Enemy, GameInfo, Collision, Hazard, Item, Position, PlayerStat
 
-player_feature_count = 20
+MAX_HEALTH=1000
+MAX_SCORE=500000
+MAX_SPEED=15000
+MAX_DAMAGE=9001
+MAX_KILLS=10000
+MAX_LEVELS=30
+
+POSITION_FACTOR=100
+
+player_feature_count = 21
 def serialize_player(player: Player):
     """Convert player data to a flattened NumPy array."""
     special_equipped_mapping = {
@@ -14,23 +23,24 @@ def serialize_player(player: Player):
         string_to_int(player.id),
         # player.display_name,
         # player.speech,
-        player.position.x,
-        player.position.y,
-        player.health,
-        player.base_speed,
-        player.attack_damage,
+        player.position.x / POSITION_FACTOR,
+        player.position.y / POSITION_FACTOR,
+        player.health / MAX_HEALTH,
+        player.max_health / MAX_HEALTH,
+        player.base_speed / MAX_SPEED,
+        player.attack_damage / MAX_DAMAGE,
         int(player.shield_raised),
         1 if player.direction == "right" else 0,  # Encode direction
         int(player.is_attacking),
-        player.score,
-        player.levelling.level,
+        player.score / MAX_SCORE,
+        player.levelling.level / MAX_LEVELS,
         int(player.is_dashing),
         int(player.is_frozen),
         int(player.is_pushed),
         int(player.is_zapped),
         int(player.is_overclocking),
         int(player.has_health_regen),
-        player.points,
+        player.points / MAX_SCORE,
         special_equipped_mapping.get(player.special_equipped, 0),
         int(player.unleashing_shockwave)
     ]
@@ -49,13 +59,13 @@ def serialize_collision(collision: Collision):
         "chest": 8,
     }
     return [
-        collision.relative_position.x,
-        collision.relative_position.y,
+        collision.relative_position.x / POSITION_FACTOR,
+        collision.relative_position.y / POSITION_FACTOR,
         type_mapping.get(collision.type,0),
     ]
 
 max_collisions=20
-own_player_feature_count = player_feature_count + 15 + max_collisions*collision_feature_count
+own_player_feature_count = player_feature_count + 14 + max_collisions*collision_feature_count
 def serialize_own_player(own_player: OwnPlayer):
     if own_player is None:
         return [0] * own_player_feature_count
@@ -77,7 +87,6 @@ def serialize_own_player(own_player: OwnPlayer):
         int(own_player.is_shield_ready),
         int(own_player.is_special_ready),
         int(own_player.is_zap_ready),
-        own_player.max_health,
         own_player.overclock_duration,
         len(own_player.items.big_potions),
         len(own_player.items.speed_zappers),
@@ -88,7 +97,7 @@ def serialize_own_player(own_player: OwnPlayer):
         own_player.levelling.speed,
     ] + serialized_collisions
 
-enemy_feature_count=11
+enemy_feature_count=12
 def serialize_enemy(enemy: Enemy):
     enemy_type_mapping = {
         "wolf": 0,
@@ -99,16 +108,17 @@ def serialize_enemy(enemy: Enemy):
     """Convert enemy data to a flattened NumPy array."""
     return [
         # enemy.id,
-        enemy.position.x,
-        enemy.position.y,
-        enemy.health,
-        enemy.attack_damage,
+        enemy.position.x / POSITION_FACTOR,
+        enemy.position.y / POSITION_FACTOR,
+        enemy.health / MAX_HEALTH,
+        enemy.max_health / MAX_HEALTH,
+        enemy.attack_damage / MAX_DAMAGE,
         1 if enemy.direction == "right" else 0,  # Encode direction
         int(enemy.is_attacking),
         int(enemy.is_frozen),
         int(enemy.is_pushed),
         int(enemy.is_zapped),
-        enemy.points,
+        enemy.points / MAX_SCORE,
         enemy_type_mapping.get(enemy.type, 0)
     ]
 
@@ -126,7 +136,7 @@ def serialize_gameinfo(gameinfo: GameInfo):
     return [
         game_state_mapping.get(gameinfo.state, 0),
         string_to_int(gameinfo.map),
-        gameinfo.time_remaining_s,
+        gameinfo.time_remaining_s / 60,
         gameinfo.latency,
         int(gameinfo.friendly_fire),
         1 if gameinfo.game_type == "rpg" else 0
@@ -147,10 +157,10 @@ def serialize_hazard(hazard: Hazard):
     }
     return [
         # hazard.id,
-        hazard.position.x,
-        hazard.position.y,
+        hazard.position.x / POSITION_FACTOR,
+        hazard.position.y / POSITION_FACTOR,
         hazard_type_mapping.get(hazard.type, -1),
-        hazard.attack_damage,
+        hazard.attack_damage / MAX_DAMAGE,
         status_mapping.get(hazard.status, 0),
     ]
 
@@ -176,10 +186,10 @@ def serialize_item(item: Item):
     }
     return [
         # item.id,
-        item.position.x,
-        item.position.y,
+        item.position.x / POSITION_FACTOR,
+        item.position.y / POSITION_FACTOR,
         item_type_mapping.get(item.type, -1),
-        item.points,
+        item.points / MAX_SCORE,
         item.value,
         power_mapping.get(item.power, -1),
     ]
@@ -187,24 +197,25 @@ def serialize_item(item: Item):
 obstacle_feature_count=2
 def serialize_obstacle(obstacle: Position):
     return [
-        obstacle.x,
-        obstacle.y,
+        obstacle.x / POSITION_FACTOR,
+        obstacle.y / POSITION_FACTOR,
     ]
 
-stat_feature_count=13
+stat_feature_count=14
 def serialize_player_stat(stat: PlayerStat):
     return [
         string_to_int(stat.id),
-        stat.score,
-        stat.kills,
-        stat.deaths,
-        stat.coins,
+        stat.score / MAX_SCORE,
+        stat.kills / MAX_KILLS,
+        stat.deaths / MAX_KILLS,
+        stat.xps,
+        stat.coins / MAX_KILLS,
         stat.kd_ratio,
         stat.kill_streak,
         stat.overclocks,
-        stat.wolf_kills,
-        stat.ghoul_kills,
-        stat.minotaur_kills,
-        stat.tiny_kills,
-        stat.player_kills,
+        stat.wolf_kills / MAX_KILLS,
+        stat.ghoul_kills / MAX_KILLS,
+        stat.minotaur_kills / MAX_KILLS,
+        stat.tiny_kills / MAX_KILLS,
+        stat.player_kills / MAX_KILLS,
     ]
