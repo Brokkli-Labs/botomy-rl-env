@@ -40,8 +40,16 @@ open /Applications/Botomy.app/ --args -- --rl_training_mode=true
 ```
 
 Windows:
+
 ```
 Botomy.exe -- --rl_training_mode=true
+```
+
+You can go headless too
+e.g.
+
+```
+open /Applications/Botomy.app/ --args --headless -- --rl_training_mode=true
 ```
 
 ## API Endpoints
