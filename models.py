@@ -384,7 +384,7 @@ MoveType = Union[
     Dict[Literal["move_to"], Position], 
     Dict[Literal["speak"], str], 
     Dict[Literal["use"], Literal["ring", "speed_zapper", "big_potion"]], 
-    Dict[Literal["redeem_skill_points"], Literal["attack", "health", "speed"]], 
+    Dict[Literal["redeem_skill_point"], Literal["attack", "health", "speed"]], 
     Dict[Literal["debug_info"], DebugInfo]
 ]
 
