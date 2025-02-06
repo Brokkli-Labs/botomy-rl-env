@@ -83,10 +83,13 @@ async def wait_for_data_set():
     while server_state.wait_for_data_event.is_set():
         await asyncio.sleep(0.001)  # Use asyncio.sleep to yield control
 
-async def get_data():
-    # Wait for the api call
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, server_state.wait_for_data_event.wait)
+async def get_data(immediate=False):
+    if not immediate:
+        # Wait for the api call
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, server_state.wait_for_data_event.wait)
+    else:
+        server_state.wait_for_data_event.set()
 
     # Wait for the next api call
     await wait_for_data_set()  # Await the coroutine properly
