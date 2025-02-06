@@ -19,16 +19,20 @@ class ActionSpace(Enum):
     MOVE_LEFT = 1
     MOVE_UP = 2
     MOVE_DOWN = 3
-    ATTACK = 4
-    DASH = 5
-    SPECIAL = 6
-    SHIELD = 7
-    USE_RING = 8
-    USE_SPEED_ZAPPER = 9
-    USE_BIG_POTION = 10
-    REDEEM_SKILL_POINTS_ATTACK = 11
-    REDEEM_SKILL_POINTS_HEALTH = 12
-    REDEEM_SKILL_POINTS_SPEED = 13
+    MOVE_UP_RIGHT = 4
+    MOVE_UP_LEFT = 5
+    MOVE_DOWN_RIGHT = 6
+    MOVE_DOWN_LEFT = 7
+    ATTACK = 8
+    DASH = 9
+    SPECIAL = 10
+    SHIELD = 11
+    USE_RING = 12
+    USE_SPEED_ZAPPER = 13
+    USE_BIG_POTION = 14
+    REDEEM_SKILL_POINTS_ATTACK = 15
+    REDEEM_SKILL_POINTS_HEALTH = 16
+    REDEEM_SKILL_POINTS_SPEED = 17
 
 
 class CustomEnv(gym.Env):
@@ -116,8 +120,12 @@ class CustomEnv(gym.Env):
         action_map = {
             ActionSpace.MOVE_RIGHT: {"move_to": self.get_move_coordinates(Position(move_delta, 0))},
             ActionSpace.MOVE_LEFT: {"move_to": self.get_move_coordinates(Position(-move_delta, 0))},
-            ActionSpace.MOVE_UP: {"move_to": self.get_move_coordinates(Position(0, move_delta))},
-            ActionSpace.MOVE_DOWN: {"move_to": self.get_move_coordinates(Position(0, -move_delta))},
+            ActionSpace.MOVE_UP: {"move_to": self.get_move_coordinates(Position(0, -move_delta))},
+            ActionSpace.MOVE_DOWN: {"move_to": self.get_move_coordinates(Position(0, move_delta))},
+            ActionSpace.MOVE_UP_RIGHT: {"move_to": self.get_move_coordinates(Position(move_delta, -move_delta))},
+            ActionSpace.MOVE_UP_LEFT: {"move_to": self.get_move_coordinates(Position(-move_delta, -move_delta))},
+            ActionSpace.MOVE_DOWN_RIGHT: {"move_to": self.get_move_coordinates(Position(move_delta, move_delta))},
+            ActionSpace.MOVE_DOWN_LEFT: {"move_to": self.get_move_coordinates(Position(-move_delta, move_delta))},
             ActionSpace.ATTACK: "attack",
             ActionSpace.DASH: "dash",
             ActionSpace.SPECIAL: "special",
@@ -125,9 +133,9 @@ class CustomEnv(gym.Env):
             ActionSpace.USE_RING: {"use": "ring"},
             ActionSpace.USE_SPEED_ZAPPER: {"use": "speed_zapper"},
             ActionSpace.USE_BIG_POTION: {"use": "big_potion"},
-            ActionSpace.REDEEM_SKILL_POINTS_ATTACK: {"redeem_skill_points": "attack"},
-            ActionSpace.REDEEM_SKILL_POINTS_HEALTH: {"redeem_skill_points": "health"},
-            ActionSpace.REDEEM_SKILL_POINTS_SPEED: {"redeem_skill_points": "speed"},
+            ActionSpace.REDEEM_SKILL_POINTS_ATTACK: {"redeem_skill_point": "attack"},
+            ActionSpace.REDEEM_SKILL_POINTS_HEALTH: {"redeem_skill_point": "health"},
+            ActionSpace.REDEEM_SKILL_POINTS_SPEED: {"redeem_skill_point": "speed"},
         }
         return action_map[action]
 

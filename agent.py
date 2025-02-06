@@ -44,8 +44,8 @@ class BotomyAgent:
         obs_tuple = tuple(obs)  # Convert observation to a hashable type
         # with probability epsilon return a random action to explore the environment
         if np.random.random() < self.epsilon:
-            # return self.env.action_space.sample()
-            return np.random.randint(0, 4)
+            return self.env.action_space.sample()
+            # return np.random.randint(0, 4)
         # with probability (1 - epsilon) act greedily (exploit)
         else:
             return int(np.argmax(self.q_values[obs_tuple]))
