@@ -1,5 +1,6 @@
 from pathlib import Path
 import gymnasium as gym
+from env import CustomEnv
 from stable_baselines3 import PPO
 
 env = gym.make('CustomEnv-v0')
