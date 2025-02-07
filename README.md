@@ -52,6 +52,17 @@ e.g.
 open /Applications/Botomy.app/ --args --headless -- --rl_training_mode=true
 ```
 
+3. Tensorboard
+
+https://stable-baselines3.readthedocs.io/en/master/guide/tensorboard.html
+
+```shell
+tensorboard --logdir ./tensorboard/
+```
+
+http://localhost:6006/
+
+
 ## API Endpoints
 
 - `POST /`: Accepts level data and returns an empty list.
