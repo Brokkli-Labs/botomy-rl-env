@@ -160,7 +160,9 @@ class CustomEnv(gym.Env):
             ActionSpace.REDEEM_SKILL_POINTS_HEALTH: [{"redeem_skill_point": "health"}],
             ActionSpace.REDEEM_SKILL_POINTS_SPEED: [{"redeem_skill_point": "speed"}],
         }
-        return action_map[action]
+        move = action_map[action]
+        move += [{"debug_info": {"message": str(move)}}]
+        return move
 
     def step(self, action_idx: int):
         # convert the action index to a move
