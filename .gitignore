@@ -106,3 +106,10 @@ dmypy.json
 .pyre/
 
 *.zip
+
+# os
+.DS_Store
+
+# training artifacts
+checkpoints
+logs
