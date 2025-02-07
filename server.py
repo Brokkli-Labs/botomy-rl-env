@@ -9,7 +9,7 @@ app = FastAPI()
 
 class ServerState:
     def __init__(self):
-        self.should_reset = True
+        self.should_reset = False
         self.skip_frames = 0
         self.skip_frame_count = 0
         
