@@ -28,7 +28,13 @@ This project is a reinforcement learning environment using FastAPI.
 1. Run the env which starts a fastapi server on port 3000
 
    ```sh
-   python main.py
+   python main.py --train=true
+   
+   # set other params..
+   python main.py --n_steps=1000 --n_epochs=10 --checkpoint_freq=1000 --train=true --log_path="./logs"  --checkpoint_path="./checkpoints"  --model_path="model.zip"
+   
+   # help
+   python main.py --help
    ```
 
 2. Start the game in rl training mode
