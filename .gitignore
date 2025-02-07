@@ -107,5 +107,9 @@ dmypy.json
 
 *.zip
 
+# os
+.DS_Store
+
+# training artifacts
 checkpoints
 logs
