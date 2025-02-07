@@ -30,6 +30,8 @@ if __name__ == "__main__":
     # typically logs at the end of each epoch
     logger = configure(tmp_path, ["stdout"])
 
+    # save model checkpoints
+    # https://stable-baselines3.readthedocs.io/en/master/guide/callbacks.html#stoptrainingcallback
     checkpoint_callback = CheckpointCallback(
         save_freq=checkpoint_freq,
         save_path=checkpoint_path,
