@@ -3,10 +3,12 @@ import gymnasium as gym
 from env import CustomEnv
 from stable_baselines3 import PPO
 from stable_baselines3.common.logger import configure
-from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.callbacks import CheckpointCallback, CallbackList
 
-tmp_path = "/tmp/sb3_log/"
-checkpoint_path = "./sb3_checkpoints/"
+from hyper_parameter_callback import HyperParamCallback
+
+tmp_path = "./logs/"
+checkpoint_path = "./checkpoints/"
 
 env = gym.make('CustomEnv-v0')
 if __name__ == "__main__":
@@ -23,12 +25,11 @@ if __name__ == "__main__":
       model = PPO.load("rpg_agent", env, verbose=2, n_steps=n_steps, n_epochs=n_epochs, batch_size=batch_size)
     else:
       print("no model found")
-      model = PPO("MlpPolicy", env, verbose=2, n_steps=n_steps, n_epochs=n_epochs, batch_size=batch_size)
-
+      model = PPO("MlpPolicy", env, n_steps=n_steps, n_epochs=n_epochs, batch_size=batch_size)
 
     # log training data to stdout
     # typically logs at the end of each epoch
-    logger = configure(tmp_path, ["stdout"])
+    logger = configure(tmp_path, ["stdout", "tensorboard"])
 
     # save model checkpoints
     # https://stable-baselines3.readthedocs.io/en/master/guide/callbacks.html#stoptrainingcallback
@@ -39,9 +40,11 @@ if __name__ == "__main__":
         save_replay_buffer=True,
         save_vecnormalize=True,
     )
+    hyperparam_callback = HyperParamCallback()
+    callback = CallbackList([checkpoint_callback, hyperparam_callback])
 
     model.set_logger(logger)
 
     # add a progress bar so you know it's not forzen
-    model.learn(total_timesteps=total_timesteps, progress_bar=True, callback=checkpoint_callback)
+    model.learn(total_timesteps=total_timesteps, progress_bar=True, callback=callback)
     model.save("rpg_agent")
