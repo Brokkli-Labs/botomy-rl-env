@@ -112,7 +112,7 @@ class CustomEnv(gym.Env):
 
     async def _reset_async(self):
         self.state = await get_data()
-        while self.state.game_info.state != "STARTING":
+        while self.state.game_info.state != GameState.STARTED:
             self.state = await get_data(immediate=True)
 
         obs = self.get_observation()
