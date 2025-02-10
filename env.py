@@ -103,16 +103,6 @@ class CustomEnv(gym.Env):
         obs = self.get_observation()
         return obs, {}
 
-    # async def _reset_async(self):
-    #     self.state = await get_data()
-    #     while self.state.game_info.state != "STARTING":
-    #         self.state = await get_data(immediate=True)
-    #     while self.state.game_info.state != "STARTED":
-    #         self.state = await get_data(immediate=True)
-
-    #     obs = self.get_observation()
-    #     return obs
-
     def get_move_coordinates(self, delta: Position):
         # Convert delta to coordinates
         if not self.state or not hasattr(self.state, 'own_player') or not self.state.own_player:
@@ -164,10 +154,6 @@ class CustomEnv(gym.Env):
         game_action = self.get_game_move(ActionSpace(action_idx))
         # pass the action to the server and get the new state
         new_level_data = self.loop.run_until_complete(step(game_action))
-        # new_level_data = await set_moves(game_action)
-
-        # # Use existing loop instead of creating new one
-        # self.loop.run_until_complete(get_data())
         
         # calculate the reward
         reward = self.get_reward(new_level_data=new_level_data)
