@@ -10,8 +10,13 @@ MAX_LEVELS=30
 
 POSITION_FACTOR=100
 
+def serialize_position_x(position: Position, center: Position):
+  return (position.x - center.x) / POSITION_FACTOR
+def serialize_position_y(position: Position, center: Position):
+  return (position.y - center.y) / POSITION_FACTOR
+
 player_feature_count = 21
-def serialize_player(player: Player):
+def serialize_player(player: Player, center_pos: Position):
     """Convert player data to a flattened NumPy array."""
     special_equipped_mapping = {
         "": 0,
@@ -23,8 +28,8 @@ def serialize_player(player: Player):
         string_to_int(player.id),
         # player.display_name,
         # player.speech,
-        player.position.x / POSITION_FACTOR,
-        player.position.y / POSITION_FACTOR,
+        serialize_position_x(player.position, center_pos),
+        serialize_position_y(player.position, center_pos),
         player.health / MAX_HEALTH,
         player.max_health / MAX_HEALTH,
         player.base_speed / MAX_SPEED,
@@ -70,7 +75,7 @@ def serialize_own_player(own_player: OwnPlayer):
     if own_player is None:
         return [0] * own_player_feature_count
     """Convert own player data to a flattened NumPy array."""
-    serialized_player = serialize_player(own_player)
+    serialized_player = serialize_player(own_player, own_player.position)
     serialized_collisions = []
 
     for i in range(max_collisions):
@@ -98,7 +103,7 @@ def serialize_own_player(own_player: OwnPlayer):
     ] + serialized_collisions
 
 enemy_feature_count=12
-def serialize_enemy(enemy: Enemy):
+def serialize_enemy(enemy: Enemy, center_pos: Position):
     enemy_type_mapping = {
         "wolf": 0,
         "ghoul": 1,
@@ -108,8 +113,8 @@ def serialize_enemy(enemy: Enemy):
     """Convert enemy data to a flattened NumPy array."""
     return [
         # enemy.id,
-        enemy.position.x / POSITION_FACTOR,
-        enemy.position.y / POSITION_FACTOR,
+        serialize_position_x(enemy.position, center_pos),
+        serialize_position_y(enemy.position, center_pos),
         enemy.health / MAX_HEALTH,
         enemy.max_health / MAX_HEALTH,
         enemy.attack_damage / MAX_DAMAGE,
@@ -143,7 +148,7 @@ def serialize_gameinfo(gameinfo: GameInfo):
     ]
 
 hazard_feature_count=5
-def serialize_hazard(hazard: Hazard):
+def serialize_hazard(hazard: Hazard, center_pos: Position):
     """Convert hazard data to a flattened NumPy array."""
     hazard_type_mapping = {
         "bomb": 0,
@@ -157,8 +162,8 @@ def serialize_hazard(hazard: Hazard):
     }
     return [
         # hazard.id,
-        hazard.position.x / POSITION_FACTOR,
-        hazard.position.y / POSITION_FACTOR,
+        serialize_position_x(hazard.position, center_pos),
+        serialize_position_y(hazard.position, center_pos),
         hazard_type_mapping.get(hazard.type, -1),
         hazard.attack_damage / MAX_DAMAGE,
         status_mapping.get(hazard.status, 0),
@@ -169,7 +174,7 @@ def string_to_int(s):
     return int(encoded, 16)
 
 item_feature_count=6
-def serialize_item(item: Item):
+def serialize_item(item: Item, center_pos: Position):
     """Convert item data to a flattened NumPy array."""
     item_type_mapping = {
         "big_potion": 0,
@@ -186,8 +191,8 @@ def serialize_item(item: Item):
     }
     return [
         # item.id,
-        item.position.x / POSITION_FACTOR,
-        item.position.y / POSITION_FACTOR,
+        serialize_position_x(item.position, center_pos),
+        serialize_position_y(item.position, center_pos),
         item_type_mapping.get(item.type, -1),
         item.points / MAX_SCORE,
         item.value,
@@ -195,10 +200,10 @@ def serialize_item(item: Item):
     ]
 
 obstacle_feature_count=2
-def serialize_obstacle(obstacle: Position):
+def serialize_obstacle(obstacle: Position, center_pos: Position):
     return [
-        obstacle.x / POSITION_FACTOR,
-        obstacle.y / POSITION_FACTOR,
+        serialize_position_x(obstacle, center_pos),
+        serialize_position_y(obstacle, center_pos),
     ]
 
 stat_feature_count=14

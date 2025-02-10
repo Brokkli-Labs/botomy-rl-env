@@ -2,15 +2,20 @@ from typing import List
 from fastapi import FastAPI, Request
 import asyncio
 import threading
+import logging
 
 from models import LevelData, Move, GameState
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
 class ServerState:
     def __init__(self):
         self.should_reset = False
-        self.skip_frames = 0
+        self.skip_frames = 20
         self.skip_frame_count = 0
         
         self.data: LevelData = LevelData(
@@ -50,7 +55,7 @@ async def play(request: Request):
         return []
     
     if server_state.wait_for_data_event.is_set():
-      # print("setting data")
+      # logger.info("setting data")
       body = await request.json()
       level_data = LevelData.from_dict(body)  # Use from_dict instead of from_json
       server_state.data = level_data  # Update the data with level_data
@@ -76,7 +81,7 @@ def reset():
       server_state.send_action_event.clear()
       server_state.wait_for_data_event.set()
     server_state.should_reset = False
-    # print("reset")
+    # logger.info("reset")
     return response
 
 async def wait_for_data_set():
@@ -126,6 +131,22 @@ def set_moves(moves: List[Move]):
 
 def set_skip_frames(count):
     server_state.skip_frames = count
+
+async def reset(seed = None, options: dict = None):
+    set_should_reset(True, seed=seed, options=options)
+    state = await get_data()
+    while state.game_info.state != "STARTING":
+        state = await get_data(immediate=True)
+    while state.game_info.state != "STARTED":
+        state = await get_data(immediate=True)
+
+    return state
+
+async def step(moves):
+    set_moves(moves)
+
+    new_level_data = await get_data()
+    return new_level_data
 
 if __name__ == "__main__":
     import uvicorn
