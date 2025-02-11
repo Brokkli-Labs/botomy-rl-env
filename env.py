@@ -1,13 +1,18 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
-from server import app, set_should_reset, get_data, set_moves
+from server import app, step, reset, get_data
 from models import Position, GameState, LevelData
 from util import serialize_player, serialize_own_player, serialize_enemy, serialize_item, serialize_gameinfo, serialize_hazard, serialize_obstacle, serialize_player_stat, own_player_feature_count, player_feature_count, enemy_feature_count, game_info_feature_count, hazard_feature_count, item_feature_count, obstacle_feature_count, stat_feature_count
 import threading
 import asyncio
 from functools import partial
 from enum import Enum
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 gym.envs.registration.register(
     id='CustomEnv-v0',
@@ -61,29 +66,17 @@ class CustomEnv(gym.Env):
             asyncio.set_event_loop(self.loop)
         
         # Initialize environment
-        self.action_space = spaces.Discrete(len(ActionSpace))  # Number of possible moves
-        self.observation_space = spaces.Box(
-            low=-np.inf, 
-            high=np.inf, 
-            shape=(
-                ((max_players - 1) * player_feature_count) + 
-                (own_player_feature_count) + 
-                (max_enemies*enemy_feature_count) +
-                game_info_feature_count+
-                (max_hazards * hazard_feature_count) +
-                (max_items * item_feature_count) +
-                (max_obstacles * obstacle_feature_count)+
-                (max_players * stat_feature_count)
-                ,
-                ), 
-            dtype=np.float32)  # Adjust based on selected attributes
-        
         self.max_players = max_players
         self.max_enemies = max_enemies
         self.max_hazards = max_hazards
         self.max_items = max_items
         self.max_obstacles = max_obstacles
+
+        self.action_space = spaces.Discrete(len(ActionSpace))  # Number of possible moves
+        self.observation_space = self.get_flat_observation_space()
+        
         self.state = self.initialize_game()
+        self.truncated = False
         
 
     def initialize_game(self):
@@ -105,18 +98,15 @@ class CustomEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed, options=options)
-        set_should_reset(True, seed=seed, options=options)
 
-        obs = self.loop.run_until_complete(self._reset_async())
-        return obs, {}
-
-    async def _reset_async(self):
-        self.state = await get_data()
-        while self.state.game_info.state != GameState.STARTED:
-            self.state = await get_data(immediate=True)
-
+        if self.truncated:
+            while self.state.own_player.health <= 0:
+                self.state = self.loop.run_until_complete(get_data(immediate=True))
+        else:
+            self.state = self.loop.run_until_complete(reset(seed=seed, options=options))
+        
         obs = self.get_observation()
-        return obs
+        return obs, {}
 
     def get_move_coordinates(self, delta: Position):
         # Convert delta to coordinates
@@ -168,17 +158,18 @@ class CustomEnv(gym.Env):
         # convert the action index to a move
         game_action = self.get_game_move(ActionSpace(action_idx))
         # pass the action to the server and get the new state
-        set_moves(game_action)
-
-        # Use existing loop instead of creating new one
-        new_level_data = self.loop.run_until_complete(get_data())
+        new_level_data = self.loop.run_until_complete(step(game_action))
         
         # calculate the reward
-        reward = new_level_data.own_player.score - self.state.own_player.score
+        reward = self.get_reward(new_level_data=new_level_data)
+        if reward != 0:
+            logger.debug(f"reward: {reward}, game_action: {game_action}")
         
         # check if the round is over
         terminated = new_level_data.game_info.state == GameState.ENDED or new_level_data.game_info.state == GameState.MATCH_COMPLETED
-        truncated = False
+        if terminated:
+            logger.debug(f"terminated: {terminated}")
+        self.truncated = new_level_data.own_player.health <= 0
         
         info = {}
         
@@ -186,15 +177,80 @@ class CustomEnv(gym.Env):
         self.state = new_level_data
         obs = self.get_observation()
 
-        return obs, reward, terminated, truncated, info
+        return obs, reward, terminated, self.truncated, info
     
+    def get_reward(self, new_level_data: LevelData):
+        reward = new_level_data.own_player.score - self.state.own_player.score
+
+        # # moved
+        # if round(self.state.own_player.position.x) != round(new_level_data.own_player.position.x) or round(self.state.own_player.position.y) != round(new_level_data.own_player.position.y):
+        #     reward += 1
+        
+        # took damage
+        if self.state.own_player.health - new_level_data.own_player.health > 0:
+            reward -= self.state.own_player.health - new_level_data.own_player.health
+        
+        # got zapped
+        if not self.state.own_player.is_zapped and new_level_data.own_player.is_zapped:
+            reward -= 10
+        
+        # got frozen
+        if not self.state.own_player.is_frozen and new_level_data.own_player.is_frozen:
+            reward -= 10
+        
+        # died
+        if self.state.own_player.health > 0 and new_level_data.own_player.health <= 0:
+            reward -= 30
+        
+        return reward
+
+
     def get_observation(self):
-        return self.serialize_game_state()
+        return self.get_flat_observation()
     
-    def serialize_game_state(self):
+    
+    def get_structured_observation_space(self):
+        pass
+    
+    def get_structured_observation(self):
+        return spaces.Dict(
+            low=-np.inf, 
+            high=np.inf, 
+            shape=(
+                ((self.max_players - 1) * player_feature_count) + 
+                (own_player_feature_count) + 
+                (self.max_enemies*enemy_feature_count) +
+                game_info_feature_count+
+                (self.max_hazards * hazard_feature_count) +
+                (self.max_items * item_feature_count) +
+                (self.max_obstacles * obstacle_feature_count)+
+                (self.max_players * stat_feature_count)
+                ,
+                ), 
+            dtype=np.float32)  # Adjust based on selected attributes
+
+    def get_flat_observation_space(self):
+        return spaces.Box(
+            low=-np.inf, 
+            high=np.inf, 
+            shape=(
+                ((self.max_players - 1) * player_feature_count) + 
+                (own_player_feature_count) + 
+                (self.max_enemies*enemy_feature_count) +
+                game_info_feature_count+
+                (self.max_hazards * hazard_feature_count) +
+                (self.max_items * item_feature_count) +
+                (self.max_obstacles * obstacle_feature_count)+
+                (self.max_players * stat_feature_count)
+                ,
+                ), 
+            dtype=np.float32)  # Adjust based on selected attributes
+        
+    def get_flat_observation(self):
         """Convert game state to a flattened NumPy array."""
         players = self.state.players
         own_player = self.state.own_player
+        center_pos = own_player.position
         obs = []
 
         # Add own player data
@@ -203,35 +259,35 @@ class CustomEnv(gym.Env):
         for i in range(self.max_players-1):
             if i < len(players):  # Existing player
                 player = players[i]
-                obs.extend(serialize_player(player))
+                obs.extend(serialize_player(player, center_pos))
             else:  # Fill empty slots if fewer than max 
                 obs.extend([0] * player_feature_count)
         
         for i in range(self.max_enemies):
             if i < len(self.state.enemies):  # Enemies
                 enemy = self.state.enemies[i]
-                obs.extend(serialize_enemy(enemy))
+                obs.extend(serialize_enemy(enemy, center_pos))
             else:  # Fill empty slots if fewer than max
                 obs.extend([0] * enemy_feature_count)
         
         for i in range(self.max_hazards):
             if i < len(self.state.hazards): 
                 hazard = self.state.hazards[i]
-                obs.extend(serialize_hazard(hazard))
+                obs.extend(serialize_hazard(hazard, center_pos))
             else:  # Fill empty slots if fewer than max
                 obs.extend([0] * hazard_feature_count)
         
         for i in range(self.max_items):
             if i < len(self.state.items): 
                 item = self.state.items[i]
-                obs.extend(serialize_item(item))
+                obs.extend(serialize_item(item, center_pos))
             else:  # Fill empty slots if fewer than max
                 obs.extend([0] * item_feature_count)
         
         for i in range(self.max_obstacles):
             if i < len(self.state.obstacles): 
                 obstacle = self.state.obstacles[i]
-                obs.extend(serialize_obstacle(obstacle))
+                obs.extend(serialize_obstacle(obstacle, center_pos))
             else:  # Fill empty slots if fewer than max
                 obs.extend([0] * obstacle_feature_count)
         
