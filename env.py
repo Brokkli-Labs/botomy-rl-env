@@ -1,7 +1,7 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
-from server import app, step, reset
+from server import app, step, reset, get_data
 from models import Position, GameState, LevelData
 from util import serialize_player, serialize_own_player, serialize_enemy, serialize_item, serialize_gameinfo, serialize_hazard, serialize_obstacle, serialize_player_stat, own_player_feature_count, player_feature_count, enemy_feature_count, game_info_feature_count, hazard_feature_count, item_feature_count, obstacle_feature_count, stat_feature_count
 import threading
@@ -76,6 +76,7 @@ class CustomEnv(gym.Env):
         self.observation_space = self.get_flat_observation_space()
         
         self.state = self.initialize_game()
+        self.truncated = False
         
 
     def initialize_game(self):
@@ -97,9 +98,13 @@ class CustomEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed, options=options)
-        # reset(True, seed=seed, options=options)
 
-        self.state = self.loop.run_until_complete(reset(seed=seed, options=options))
+        if self.truncated:
+            while self.state.own_player.health <= 0:
+                self.state = self.loop.run_until_complete(get_data(immediate=True))
+        else:
+            self.state = self.loop.run_until_complete(reset(seed=seed, options=options))
+        
         obs = self.get_observation()
         return obs, {}
 
@@ -164,7 +169,7 @@ class CustomEnv(gym.Env):
         terminated = new_level_data.game_info.state == GameState.ENDED or new_level_data.game_info.state == GameState.MATCH_COMPLETED
         if terminated:
             logger.debug(f"terminated: {terminated}")
-        truncated = False
+        self.truncated = new_level_data.own_player.health <= 0
         
         info = {}
         
@@ -172,13 +177,13 @@ class CustomEnv(gym.Env):
         self.state = new_level_data
         obs = self.get_observation()
 
-        return obs, reward, terminated, truncated, info
+        return obs, reward, terminated, self.truncated, info
     
     def get_reward(self, new_level_data: LevelData):
         reward = new_level_data.own_player.score - self.state.own_player.score
 
         # # moved
-        # if self.state.own_player.position.x != new_level_data.own_player.position.x or self.state.own_player.position.y != new_level_data.own_player.position.y:
+        # if round(self.state.own_player.position.x) != round(new_level_data.own_player.position.x) or round(self.state.own_player.position.y) != round(new_level_data.own_player.position.y):
         #     reward += 1
         
         # took damage
@@ -191,7 +196,7 @@ class CustomEnv(gym.Env):
         
         # got frozen
         if not self.state.own_player.is_frozen and new_level_data.own_player.is_frozen:
-            reward -= 50
+            reward -= 10
         
         # died
         if self.state.own_player.health > 0 and new_level_data.own_player.health <= 0:
