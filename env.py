@@ -11,7 +11,7 @@ from enum import Enum
 import logging
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 gym.envs.registration.register(
@@ -99,11 +99,11 @@ class CustomEnv(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed, options=options)
 
-        if self.truncated:
-            while self.state.own_player.health <= 0:
-                self.state = self.loop.run_until_complete(get_data(immediate=True))
-        else:
-            self.state = self.loop.run_until_complete(reset(seed=seed, options=options))
+        # if self.truncated:
+        #     while self.state.own_player.health <= 0:
+        #         self.state = self.loop.run_until_complete(get_data(immediate=True))
+        # else:
+        self.state = self.loop.run_until_complete(reset(seed=seed, options=options))
         
         obs = self.get_observation()
         return obs, {}
@@ -166,7 +166,7 @@ class CustomEnv(gym.Env):
             logger.debug(f"reward: {reward}, game_action: {game_action}")
         
         # check if the round is over
-        terminated = new_level_data.game_info.state == GameState.ENDED or new_level_data.game_info.state == GameState.MATCH_COMPLETED
+        terminated = new_level_data.game_info.state == GameState.ENDED or new_level_data.game_info.state == GameState.MATCH_COMPLETED or new_level_data.own_player.health <= 0
         if terminated:
             logger.debug(f"terminated: {terminated}")
         self.truncated = new_level_data.own_player.health <= 0
@@ -190,18 +190,18 @@ class CustomEnv(gym.Env):
         if self.state.own_player.health - new_level_data.own_player.health > 0:
             reward -= self.state.own_player.health - new_level_data.own_player.health
         
-        # got zapped
-        if not self.state.own_player.is_zapped and new_level_data.own_player.is_zapped:
-            reward -= 10
-        
-        # got frozen
-        if not self.state.own_player.is_frozen and new_level_data.own_player.is_frozen:
-            reward -= 10
-        
-        # died
-        if self.state.own_player.health > 0 and new_level_data.own_player.health <= 0:
-            reward -= 30
-        
+        # # got zapped
+        # if not self.state.own_player.is_zapped and new_level_data.own_player.is_zapped:
+        #     reward -= 10
+        #
+        # # got frozen
+        # if not self.state.own_player.is_frozen and new_level_data.own_player.is_frozen:
+        #     reward -= 10
+        #
+        # # died
+        # if self.state.own_player.health > 0 and new_level_data.own_player.health <= 0:
+        #     reward -= 30
+
         return reward
 
 

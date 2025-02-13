@@ -16,6 +16,7 @@ class HyperParamCallback(BaseCallback):
         # Tensorbaord will find & display metrics from the `SCALARS` tab
         metric_dict = {
             "rollout/ep_len_mean": 0,
+            "rollout/ep_rew_mean": 0,
             "train/value_loss": 0.0,
         }
         self.logger.record(

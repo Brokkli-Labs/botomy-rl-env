@@ -1,8 +1,11 @@
+from datetime import datetime
 from pathlib import Path
 import gymnasium as gym
+from gymnasium.wrappers import TimeLimit
+
 from env import CustomEnv
+
 from stable_baselines3 import PPO
-from stable_baselines3.common.logger import configure
 from stable_baselines3.common.callbacks import CheckpointCallback, CallbackList
 import argparse
 
@@ -16,6 +19,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_steps", type=int, default=1000)
     parser.add_argument("--n_epochs", type=int, default=10)
     parser.add_argument("--checkpoint_freq", type=int, default=1000)
+    parser.add_argument("--max_episode_steps", type=int, default=250)
     parser.add_argument("--train", type=bool, default=False)
     parser.add_argument("--log_path", type=str, default="./logs")
     parser.add_argument("--checkpoint_path", type=str, default="./checkpoints")
@@ -29,6 +33,9 @@ if __name__ == "__main__":
     batch_size = args.n_steps
     total_timesteps = args.n_steps * args.n_epochs
 
+    # env
+    max_episode_steps = args.max_episode_steps
+
     # mode
     train = args.train
     checkpoint_freq = args.checkpoint_freq
@@ -38,13 +45,14 @@ if __name__ == "__main__":
     checkpoint_path = args.checkpoint_path
     model_path = args.model_path
 
-    # log training data to stdout
-    # typically logs at the end of each epoch
-    logger = configure(log_path, ["stdout", "tensorboard"])
+    env = TimeLimit(env, max_episode_steps=max_episode_steps)
 
     if train:
         print("Training model")
-        model = PPO("MlpPolicy", env, n_steps=n_steps, n_epochs=n_epochs, batch_size=batch_size)
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M")
+        run_name = f"train-{timestamp}"
+
+        model = PPO("MlpPolicy", env, n_steps=n_steps, n_epochs=n_epochs, batch_size=batch_size, tensorboard_log=log_path)
 
 
         # save model checkpoints
@@ -59,10 +67,8 @@ if __name__ == "__main__":
         hyperparam_callback = HyperParamCallback()
         callback = CallbackList([checkpoint_callback, hyperparam_callback])
 
-        model.set_logger(logger)
-
         # add a progress bar so you know it's not frozen
-        model.learn(total_timesteps=total_timesteps, progress_bar=True, callback=callback)
+        model.learn(total_timesteps=total_timesteps, progress_bar=True, callback=callback, tb_log_name=run_name)
         model.save("rpg_agent")
     else:
         print("Inference mode")
@@ -72,8 +78,6 @@ if __name__ == "__main__":
             print("no model found")
         else:
             model = PPO.load("rpg_agent", env, n_steps=n_steps, n_epochs=n_epochs, batch_size=batch_size)
-
-            model.set_logger(logger)
 
             env = model.get_env()
             obs = env.reset()
