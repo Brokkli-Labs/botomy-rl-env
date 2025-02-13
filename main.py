@@ -1,4 +1,5 @@
 from datetime import datetime
+from os import path
 from pathlib import Path
 import gymnasium as gym
 from gymnasium.wrappers import TimeLimit
@@ -50,18 +51,20 @@ if __name__ == "__main__":
 
     if train:
         print("Training model")
+
         timestamp = datetime.now().strftime("%Y%m%d-%H%M")
-        run_name = f"train-{timestamp}"
+        model_name = "ppo-mlp"
+        run_name = f"{model_name}-{timestamp}"
+        final_model_path = path.join(checkpoint_path, run_name)
 
         model = PPO("MlpPolicy", env, n_steps=n_steps, n_epochs=n_epochs, batch_size=batch_size, tensorboard_log=log_path)
-
 
         # save model checkpoints
         # https://stable-baselines3.readthedocs.io/en/master/guide/callbacks.html#stoptrainingcallback
         checkpoint_callback = CheckpointCallback(
             save_freq=checkpoint_freq,
             save_path=checkpoint_path,
-            name_prefix="rl_model",
+            name_prefix=run_name,
             save_replay_buffer=True,
             save_vecnormalize=True,
         )
@@ -70,15 +73,16 @@ if __name__ == "__main__":
 
         # add a progress bar so you know it's not frozen
         model.learn(total_timesteps=total_timesteps, progress_bar=True, callback=callback, tb_log_name=run_name)
-        model.save("rpg_agent")
+
+        model.save(final_model_path)
     else:
         print("Inference mode")
 
         model_path = Path(model_path)
         if not model_path.exists():
-            print("no model found")
+            print("no model found at", model_path)
         else:
-            model = PPO.load("rpg_agent", env, n_steps=n_steps, n_epochs=n_epochs, batch_size=batch_size)
+            model = PPO.load(model_path, env, n_steps=n_steps, n_epochs=n_epochs, batch_size=batch_size)
 
             env = model.get_env()
             obs = env.reset()

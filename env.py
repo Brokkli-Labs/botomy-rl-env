@@ -43,9 +43,9 @@ class ActionSpace(Enum):
     DASH_DOWN_LEFT = 15
     
     # Actions
-    ATTACK = 16
-    SPECIAL = 17
-    SHIELD = 18
+    # ATTACK = 16
+    # SPECIAL = 17
+    # SHIELD = 18
     # USE_RING = 19
     # USE_SPEED_ZAPPER = 20
     # USE_BIG_POTION = 21
@@ -142,9 +142,9 @@ class CustomEnv(gym.Env):
             ActionSpace.DASH_UP_LEFT: ["dash", {"move_to": self.get_move_coordinates(Position(-move_delta, -move_delta))}],
             ActionSpace.DASH_DOWN_RIGHT: ["dash", {"move_to": self.get_move_coordinates(Position(move_delta, move_delta))}],
             ActionSpace.DASH_DOWN_LEFT: ["dash", {"move_to": self.get_move_coordinates(Position(-move_delta, move_delta))}],
-            ActionSpace.ATTACK: ["attack"],
-            ActionSpace.SPECIAL: ["special"],
-            ActionSpace.SHIELD: ["shield"],
+            # ActionSpace.ATTACK: ["attack"],
+            # ActionSpace.SPECIAL: ["special"],
+            # ActionSpace.SHIELD: ["shield"],
             # ActionSpace.USE_RING: [{"use": "ring"}],
             # ActionSpace.USE_SPEED_ZAPPER: [{"use": "speed_zapper"}],
             # ActionSpace.USE_BIG_POTION: [{"use": "big_potion"}],
