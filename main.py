@@ -1,8 +1,12 @@
+from datetime import datetime
+from os import path
 from pathlib import Path
 import gymnasium as gym
+from gymnasium.wrappers import TimeLimit
+
 from env import CustomEnv
+
 from stable_baselines3 import PPO
-from stable_baselines3.common.logger import configure
 from stable_baselines3.common.callbacks import CheckpointCallback, CallbackList
 import argparse
 
@@ -14,9 +18,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--n_steps", type=int, default=1000)
-    parser.add_argument("--n_epochs", type=int, default=10)
+    parser.add_argument("--n_epochs", type=int, default=2)
+    parser.add_argument("--total_timesteps", type=int, default=100000)
     parser.add_argument("--checkpoint_freq", type=int, default=1000)
-    parser.add_argument("--train", type=bool, default=False)
+    parser.add_argument("--max_episode_steps", type=int, default=250)
+    parser.add_argument("--train", type=str, default=False)
     parser.add_argument("--log_path", type=str, default="./logs")
     parser.add_argument("--checkpoint_path", type=str, default="./checkpoints")
     parser.add_argument("--model_path", type=str, default="model.zip")
@@ -27,10 +33,13 @@ if __name__ == "__main__":
     n_steps = args.n_steps
     n_epochs = args.n_epochs
     batch_size = args.n_steps
-    total_timesteps = args.n_steps * args.n_epochs
+    total_timesteps = args.total_timesteps
+
+    # env
+    max_episode_steps = args.max_episode_steps
 
     # mode
-    train = args.train
+    train = args.train == "True"
     checkpoint_freq = args.checkpoint_freq
 
     # paths
@@ -38,42 +47,43 @@ if __name__ == "__main__":
     checkpoint_path = args.checkpoint_path
     model_path = args.model_path
 
-    # log training data to stdout
-    # typically logs at the end of each epoch
-    logger = configure(log_path, ["stdout", "tensorboard"])
+    env = TimeLimit(env, max_episode_steps=max_episode_steps)
 
     if train:
         print("Training model")
-        model = PPO("MlpPolicy", env, n_steps=n_steps, n_epochs=n_epochs, batch_size=batch_size)
 
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M")
+        model_name = "ppo-mlp"
+        run_name = f"{model_name}-{timestamp}"
+        final_model_path = path.join(checkpoint_path, run_name)
+
+        model = PPO("MlpPolicy", env, n_steps=n_steps, n_epochs=n_epochs, batch_size=batch_size, tensorboard_log=log_path)
 
         # save model checkpoints
         # https://stable-baselines3.readthedocs.io/en/master/guide/callbacks.html#stoptrainingcallback
         checkpoint_callback = CheckpointCallback(
             save_freq=checkpoint_freq,
             save_path=checkpoint_path,
-            name_prefix="rl_model",
+            name_prefix=run_name,
             save_replay_buffer=True,
             save_vecnormalize=True,
         )
         hyperparam_callback = HyperParamCallback()
         callback = CallbackList([checkpoint_callback, hyperparam_callback])
 
-        model.set_logger(logger)
-
         # add a progress bar so you know it's not frozen
-        model.learn(total_timesteps=total_timesteps, progress_bar=True, callback=callback)
-        model.save("rpg_agent")
+        model.learn(total_timesteps=total_timesteps, progress_bar=True, callback=callback, tb_log_name=run_name)
+
+        model.save(final_model_path)
     else:
         print("Inference mode")
 
         model_path = Path(model_path)
+        
         if not model_path.exists():
-            print("no model found")
+            print("no model found at", model_path)
         else:
-            model = PPO.load("rpg_agent", env, n_steps=n_steps, n_epochs=n_epochs, batch_size=batch_size)
-
-            model.set_logger(logger)
+            model = PPO.load(model_path, env, n_steps=n_steps, n_epochs=n_epochs, batch_size=batch_size)
 
             env = model.get_env()
             obs = env.reset()

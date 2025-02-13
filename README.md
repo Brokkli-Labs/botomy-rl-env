@@ -31,7 +31,10 @@ This project is a reinforcement learning environment using FastAPI.
    python main.py --train=true
    
    # set other params..
-   python main.py --n_steps=1000 --n_epochs=10 --checkpoint_freq=1000 --train=true --log_path="./logs"  --checkpoint_path="./checkpoints"  --model_path="model.zip"
+   python main.py --n_steps 1000 --n_epochs 2 --total_timesteps 100000 --checkpoint_freq 1000 --max_episode_steps 1000 --train True --log_path "./logs"  --checkpoint_path "./checkpoints"  --model_path "model.zip"
+   
+   # inference
+   python main.py --n_steps 1000 --n_epochs 2 --total_timesteps 100000 --checkpoint_freq 1000 --max_episode_steps 1000 --train False --model_path "checkpoints/ppo-mlp-20250213-0819_100000_steps.zip"
    
    # help
    python main.py --help
@@ -63,7 +66,7 @@ open /Applications/Botomy.app/ --args --headless -- --rl_training_mode=true
 https://stable-baselines3.readthedocs.io/en/master/guide/tensorboard.html
 
 ```shell
-tensorboard --logdir ./tensorboard/
+tensorboard --logdir ./logs/
 ```
 
 http://localhost:6006/
