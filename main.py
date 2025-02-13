@@ -22,7 +22,7 @@ if __name__ == "__main__":
     parser.add_argument("--total_timesteps", type=int, default=100000)
     parser.add_argument("--checkpoint_freq", type=int, default=1000)
     parser.add_argument("--max_episode_steps", type=int, default=250)
-    parser.add_argument("--train", type=bool, default=False)
+    parser.add_argument("--train", type=str, default=False)
     parser.add_argument("--log_path", type=str, default="./logs")
     parser.add_argument("--checkpoint_path", type=str, default="./checkpoints")
     parser.add_argument("--model_path", type=str, default="model.zip")
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     max_episode_steps = args.max_episode_steps
 
     # mode
-    train = args.train
+    train = args.train == "True"
     checkpoint_freq = args.checkpoint_freq
 
     # paths
@@ -79,6 +79,7 @@ if __name__ == "__main__":
         print("Inference mode")
 
         model_path = Path(model_path)
+        
         if not model_path.exists():
             print("no model found at", model_path)
         else:
