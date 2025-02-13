@@ -17,7 +17,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--n_steps", type=int, default=1000)
-    parser.add_argument("--n_epochs", type=int, default=10)
+    parser.add_argument("--n_epochs", type=int, default=2)
+    parser.add_argument("--total_timesteps", type=int, default=100000)
     parser.add_argument("--checkpoint_freq", type=int, default=1000)
     parser.add_argument("--max_episode_steps", type=int, default=250)
     parser.add_argument("--train", type=bool, default=False)
@@ -31,7 +32,7 @@ if __name__ == "__main__":
     n_steps = args.n_steps
     n_epochs = args.n_epochs
     batch_size = args.n_steps
-    total_timesteps = args.n_steps * args.n_epochs
+    total_timesteps = args.total_timesteps
 
     # env
     max_episode_steps = args.max_episode_steps

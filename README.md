@@ -31,7 +31,7 @@ This project is a reinforcement learning environment using FastAPI.
    python main.py --train=true
    
    # set other params..
-   python main.py --n_steps=1000 --n_epochs=10 --checkpoint_freq=1000 --max_episode_steps=500 --train=true --log_path="./logs"  --checkpoint_path="./checkpoints"  --model_path="model.zip"
+   python main.py --n_steps=1000 --n_epochs=2 --total_timesteps=100000 --checkpoint_freq=1000 --max_episode_steps=1000 --train=true --log_path="./logs"  --checkpoint_path="./checkpoints"  --model_path="model.zip"
    
    # help
    python main.py --help

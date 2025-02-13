@@ -206,7 +206,7 @@ class CustomEnv(gym.Env):
 
         if reward == 0:
             reward = REWARD_PER_STEP
-            
+
         return reward
 
 
