@@ -19,6 +19,8 @@ gym.envs.registration.register(
     entry_point='env:CustomEnv',
 )
 
+REWARD_PER_STEP = 1
+
 class ActionSpace(Enum):
     # Basic movements
     MOVE_RIGHT = 0
@@ -44,12 +46,12 @@ class ActionSpace(Enum):
     ATTACK = 16
     SPECIAL = 17
     SHIELD = 18
-    USE_RING = 19
-    USE_SPEED_ZAPPER = 20
-    USE_BIG_POTION = 21
-    REDEEM_SKILL_POINTS_ATTACK = 22
-    REDEEM_SKILL_POINTS_HEALTH = 23
-    REDEEM_SKILL_POINTS_SPEED = 24
+    # USE_RING = 19
+    # USE_SPEED_ZAPPER = 20
+    # USE_BIG_POTION = 21
+    # REDEEM_SKILL_POINTS_ATTACK = 22
+    # REDEEM_SKILL_POINTS_HEALTH = 23
+    # REDEEM_SKILL_POINTS_SPEED = 24
 
 
 class CustomEnv(gym.Env):
@@ -99,11 +101,11 @@ class CustomEnv(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed, options=options)
 
-        # if self.truncated:
-        #     while self.state.own_player.health <= 0:
-        #         self.state = self.loop.run_until_complete(get_data(immediate=True))
-        # else:
-        self.state = self.loop.run_until_complete(reset(seed=seed, options=options))
+        if self.truncated:
+            while self.state.own_player.health <= 0:
+                self.state = self.loop.run_until_complete(get_data(immediate=True))
+        else:
+            self.state = self.loop.run_until_complete(reset(seed=seed, options=options))
         
         obs = self.get_observation()
         return obs, {}
@@ -143,12 +145,12 @@ class CustomEnv(gym.Env):
             ActionSpace.ATTACK: ["attack"],
             ActionSpace.SPECIAL: ["special"],
             ActionSpace.SHIELD: ["shield"],
-            ActionSpace.USE_RING: [{"use": "ring"}],
-            ActionSpace.USE_SPEED_ZAPPER: [{"use": "speed_zapper"}],
-            ActionSpace.USE_BIG_POTION: [{"use": "big_potion"}],
-            ActionSpace.REDEEM_SKILL_POINTS_ATTACK: [{"redeem_skill_point": "attack"}],
-            ActionSpace.REDEEM_SKILL_POINTS_HEALTH: [{"redeem_skill_point": "health"}],
-            ActionSpace.REDEEM_SKILL_POINTS_SPEED: [{"redeem_skill_point": "speed"}],
+            # ActionSpace.USE_RING: [{"use": "ring"}],
+            # ActionSpace.USE_SPEED_ZAPPER: [{"use": "speed_zapper"}],
+            # ActionSpace.USE_BIG_POTION: [{"use": "big_potion"}],
+            # ActionSpace.REDEEM_SKILL_POINTS_ATTACK: [{"redeem_skill_point": "attack"}],
+            # ActionSpace.REDEEM_SKILL_POINTS_HEALTH: [{"redeem_skill_point": "health"}],
+            # ActionSpace.REDEEM_SKILL_POINTS_SPEED: [{"redeem_skill_point": "speed"}],
         }
         move = action_map[action]
         move += [{"debug_info": {"message": str(move)}}]
@@ -166,7 +168,7 @@ class CustomEnv(gym.Env):
             logger.debug(f"reward: {reward}, game_action: {game_action}")
         
         # check if the round is over
-        terminated = new_level_data.game_info.state == GameState.ENDED or new_level_data.game_info.state == GameState.MATCH_COMPLETED or new_level_data.own_player.health <= 0
+        terminated = new_level_data.game_info.state == GameState.ENDED or new_level_data.game_info.state == GameState.MATCH_COMPLETED
         if terminated:
             logger.debug(f"terminated: {terminated}")
         self.truncated = new_level_data.own_player.health <= 0
@@ -202,6 +204,9 @@ class CustomEnv(gym.Env):
         # if self.state.own_player.health > 0 and new_level_data.own_player.health <= 0:
         #     reward -= 30
 
+        if reward == 0:
+            reward = REWARD_PER_STEP
+            
         return reward
 
 
@@ -220,11 +225,11 @@ class CustomEnv(gym.Env):
                 ((self.max_players - 1) * player_feature_count) + 
                 (own_player_feature_count) + 
                 (self.max_enemies*enemy_feature_count) +
-                game_info_feature_count+
+                # game_info_feature_count+
                 (self.max_hazards * hazard_feature_count) +
                 (self.max_items * item_feature_count) +
-                (self.max_obstacles * obstacle_feature_count)+
-                (self.max_players * stat_feature_count)
+                (self.max_obstacles * obstacle_feature_count)
+                # (self.max_players * stat_feature_count)
                 ,
                 ), 
             dtype=np.float32)  # Adjust based on selected attributes
@@ -237,11 +242,11 @@ class CustomEnv(gym.Env):
                 ((self.max_players - 1) * player_feature_count) + 
                 (own_player_feature_count) + 
                 (self.max_enemies*enemy_feature_count) +
-                game_info_feature_count+
+                # game_info_feature_count+
                 (self.max_hazards * hazard_feature_count) +
                 (self.max_items * item_feature_count) +
-                (self.max_obstacles * obstacle_feature_count)+
-                (self.max_players * stat_feature_count)
+                (self.max_obstacles * obstacle_feature_count)
+                # (self.max_players * stat_feature_count)
                 ,
                 ), 
             dtype=np.float32)  # Adjust based on selected attributes
@@ -291,14 +296,14 @@ class CustomEnv(gym.Env):
             else:  # Fill empty slots if fewer than max
                 obs.extend([0] * obstacle_feature_count)
         
-        for i in range(self.max_players):
-            if i < len(self.state.stats): 
-                stat = self.state.stats[i]
-                obs.extend(serialize_player_stat(stat))
-            else:  # Fill empty slots if fewer than max
-                obs.extend([0] * stat_feature_count)
+        # for i in range(self.max_players):
+        #     if i < len(self.state.stats):
+        #         stat = self.state.stats[i]
+        #         obs.extend(serialize_player_stat(stat))
+        #     else:  # Fill empty slots if fewer than max
+        #         obs.extend([0] * stat_feature_count)
         
-        obs.extend(serialize_gameinfo(self.state.game_info))
+        # obs.extend(serialize_gameinfo(self.state.game_info))
         
         return np.array(obs, dtype=np.float32)
 
